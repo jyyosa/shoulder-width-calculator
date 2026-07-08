@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>肩宽推算器</title>
+    <style>
+        :root {
+            --apple-black: #000000;
+            --apple-white: #ffffff;
+            --apple-light-gray: #f5f5f7;
+            --apple-near-black: #1d1d1f;
+            --apple-blue: #0071e3;
+            --apple-text-secondary: rgba(0, 0, 0, 0.8);
+            --apple-text-tertiary: rgba(0, 0, 0, 0.48);
+            --apple-card-shadow: rgba(0, 0, 0, 0.22) 3px 5px 30px 0px;
+            --apple-radius-sm: 5px;
+            --apple-radius-md: 8px;
+            --apple-radius-lg: 18px;
+            --apple-radius-pill: 980px;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Helvetica, Arial, sans-serif;
+            background: var(--apple-black); color: var(--apple-near-black);
+            line-height: 1.47; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;
+        }
+        .hero { background: var(--apple-black); color: var(--apple-white); text-align: center; padding: 80px 20px 60px; }
+        .hero h1 { font-size: clamp(32px, 5vw, 56px); font-weight: 600; line-height: 1.07; letter-spacing: -0.28px; margin-bottom: 12px; }
+        .hero p { font-size: 17px; font-weight: 400; line-height: 1.47; letter-spacing: -0.374px; color: rgba(255,255,255,0.8); max-width: 600px; margin: 0 auto; }
+        .section-light { background: var(--apple-light-gray); padding: 60px 20px; }
+        .container { max-width: 720px; margin: 0 auto; }
+        .card { background: var(--apple-white); border-radius: var(--apple-radius-lg); box-shadow: var(--apple-card-shadow); overflow: hidden; margin-bottom: 24px; }
+        .card-body { padding: 40px 32px; }
+        .card-title { font-size: 28px; font-weight: 400; line-height: 1.14; letter-spacing: 0.196px; margin-bottom: 24px; display: flex; align-items: center; gap: 10px; }
+        .gender-select { display: flex; gap: 12px; margin-bottom: 32px; }
+        .gender-option { flex: 1; position: relative; }
+        .gender-option input { position: absolute; opacity: 0; }
+        .gender-option label { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 16px; border: 2px solid rgba(0,0,0,0.08); border-radius: var(--apple-radius-md); cursor: pointer; transition: all 0.3s ease; font-weight: 600; font-size: 17px; color: var(--apple-text-secondary); background: var(--apple-light-gray); }
+        .gender-option input:checked + label { border-color: var(--apple-blue); background: rgba(0,113,227,0.06); color: var(--apple-blue); box-shadow: 0 0 0 4px rgba(0,113,227,0.1); }
+        .gender-option label:hover { border-color: var(--apple-blue); }
+        .form-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
+        @media (max-width: 480px) { .form-grid { grid-template-columns: 1fr; } }
+        .form-group { position: relative; }
+        .form-group label { display: block; font-size: 14px; font-weight: 600; line-height: 1.29; letter-spacing: -0.224px; color: var(--apple-near-black); margin-bottom: 8px; }
+        .form-group .required::after { content: ' *'; color: #ff3b30; }
+        .input-wrapper { position: relative; }
+        .input-wrapper input { width: 100%; padding: 14px 48px 14px 16px; border: 2px solid rgba(0,0,0,0.08); border-radius: var(--apple-radius-md); font-size: 17px; font-weight: 400; line-height: 1.47; letter-spacing: -0.374px; transition: all 0.3s ease; outline: none; color: var(--apple-near-black); background: var(--apple-light-gray); font-family: inherit; }
+        .input-wrapper input:focus { border-color: var(--apple-blue); box-shadow: 0 0 0 4px rgba(0,113,227,0.15); background: var(--apple-white); }
+        .input-wrapper .unit { position: absolute; right: 16px; top: 50%; transform: translateY(-50%); color: var(--apple-text-tertiary); font-size: 14px; font-weight: 500; pointer-events: none; }
+        .input-hint { font-size: 12px; line-height: 1.33; letter-spacing: -0.12px; color: var(--apple-text-tertiary); margin-top: 6px; }
+        .tag { display: inline-block; font-size: 11px; font-weight: 600; line-height: 1.29; padding: 2px 8px; border-radius: var(--apple-radius-pill); margin-left: 4px; letter-spacing: -0.12px; }
+        .tag-optional { background: rgba(0,113,227,0.1); color: var(--apple-blue); }
+        .tag-recommended { background: rgba(255,149,0,0.1); color: #ff9500; }
+        .calculate-btn { width: 100%; padding: 18px; background: var(--apple-near-black); color: var(--apple-white); border: none; border-radius: var(--apple-radius-md); font-size: 17px; font-weight: 400; line-height: 1.47; letter-spacing: -0.374px; cursor: pointer; transition: all 0.3s ease; margin-top: 32px; display: flex; align-items: center; justify-content: center; font-family: inherit; }
+        .calculate-btn:hover { background: #2c2c2e; transform: translateY(-1px); box-shadow: 0 4px 20px rgba(0,0,0,0.2); }
+        .calculate-btn:active { background: #ededf2; transform: translateY(0); }
+        .result-section { display: none; animation: fadeIn 0.6s ease; }
+        .result-section.show { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+        .result-hero { text-align: center; padding: 40px 32px; background: var(--apple-white); border-radius: var(--apple-radius-lg); margin-bottom: 24px; box-shadow: var(--apple-card-shadow); }
+        .visual-figure { width: 180px; height: 110px; margin: 0 auto 16px; position: relative; }
+        .figure-body { width: 36px; height: 60px; background: var(--apple-near-black); border-radius: 18px 18px 10px 10px; position: absolute; left: 50%; top: 50%; transform: translate(-50%, -40%); opacity: 0.15; }
+        .figure-head { width: 20px; height: 20px; background: var(--apple-near-black); border-radius: 50%; position: absolute; left: 50%; top: 8px; transform: translateX(-50%); opacity: 0.15; }
+        .shoulder-line-flat { position: absolute; left: 50%; top: 44px; transform: translateX(-50%); height: 2px; background: rgba(0,0,0,0.2); transition: width 0.8s cubic-bezier(0.34, 1.56, 0.64, 1); border-radius: 1px; }
+        .shoulder-line-curve { position: absolute; left: 50%; top: 38px; transform: translateX(-50%); height: 14px; border-top: 3px solid var(--apple-near-black); border-radius: 50% 50% 0 0; transition: width 0.8s cubic-bezier(0.34, 1.56, 0.64, 1); opacity: 0.7; }
+        .shoulder-labels { display: flex; justify-content: center; gap: 20px; margin-top: 8px; font-size: 12px; line-height: 1.33; letter-spacing: -0.12px; color: var(--apple-text-tertiary); }
+        .shoulder-labels span { display: flex; align-items: center; gap: 4px; }
+        .shoulder-labels .dot-flat { width: 8px; height: 2px; background: rgba(0,0,0,0.2); border-radius: 1px; }
+        .shoulder-labels .dot-curve { width: 8px; height: 3px; background: var(--apple-near-black); border-radius: 2px; }
+        .result-main { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+        @media (max-width: 480px) { .result-main { grid-template-columns: 1fr; } }
+        .result-box { background: var(--apple-light-gray); border-radius: var(--apple-radius-md); padding: 24px; border: 2px solid transparent; transition: all 0.3s ease; }
+        .result-box.active { border-color: var(--apple-blue); box-shadow: 0 0 0 4px rgba(0,113,227,0.08); background: var(--apple-white); }
+        .result-box .label { font-size: 12px; line-height: 1.33; letter-spacing: -0.12px; color: var(--apple-text-tertiary); margin-bottom: 8px; font-weight: 600; }
+        .result-box .value { font-size: 40px; font-weight: 600; line-height: 1.07; letter-spacing: -0.28px; color: var(--apple-near-black); }
+        .result-box.active .value { color: var(--apple-blue); }
+        .result-box .unit { font-size: 14px; line-height: 1.29; letter-spacing: -0.224px; color: var(--apple-text-tertiary); margin-top: 6px; }
+        .result-box .desc { font-size: 12px; line-height: 1.33; letter-spacing: -0.12px; color: var(--apple-text-tertiary); margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(0,0,0,0.06); }
+        .result-range { font-size: 14px; line-height: 1.29; letter-spacing: -0.224px; color: var(--apple-text-tertiary); margin-top: 12px; }
+        .result-range span { color: var(--apple-blue); font-weight: 700; }
+        .body-type-badge { display: inline-flex; align-items: center; gap: 6px; margin-top: 16px; padding: 8px 16px; border-radius: var(--apple-radius-pill); font-size: 14px; font-weight: 600; line-height: 1.29; letter-spacing: -0.224px; }
+        .body-type-narrow { background: rgba(0,113,227,0.1); color: var(--apple-blue); }
+        .body-type-normal { background: rgba(52,199,89,0.1); color: #34c759; }
+        .body-type-wide { background: rgba(255,149,0,0.1); color: #ff9500; }
+        .confidence-bar { margin-top: 20px; }
+        .confidence-label { font-size: 12px; line-height: 1.33; letter-spacing: -0.12px; color: var(--apple-text-tertiary); margin-bottom: 8px; display: flex; justify-content: space-between; }
+        .confidence-track { height: 6px; background: rgba(0,0,0,0.06); border-radius: 3px; overflow: hidden; }
+        .confidence-fill { height: 100%; border-radius: 3px; background: var(--apple-near-black); transition: width 0.8s ease; }
+        .divider { height: 1px; background: rgba(0,0,0,0.06); margin: 32px 0; }
+        .detail-section { background: var(--apple-light-gray); border-radius: var(--apple-radius-md); padding: 24px; margin-top: 20px; }
+        .detail-title { font-size: 14px; font-weight: 700; line-height: 1.29; letter-spacing: -0.224px; color: var(--apple-near-black); margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+        .detail-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; font-size: 14px; line-height: 1.29; letter-spacing: -0.224px; border-bottom: 1px solid rgba(0,0,0,0.06); }
+        .detail-item:last-child { border-bottom: none; padding-top: 16px; margin-top: 4px; border-top: 2px solid rgba(0,0,0,0.08); font-weight: 700; }
+        .detail-item .label { color: var(--apple-text-secondary); display: flex; align-items: center; gap: 6px; }
+        .detail-item .value { color: var(--apple-near-black); font-weight: 600; font-variant-numeric: tabular-nums; }
+        .detail-item .formula { font-size: 11px; color: var(--apple-text-tertiary); font-weight: 400; margin-left: 4px; letter-spacing: -0.12px; }
+        .detail-item.highlight .value { color: var(--apple-blue); font-weight: 700; }
+        .detail-item.hidden { display: none; }
+        .tip-box { padding: 20px 24px; background: var(--apple-white); border-left: 4px solid var(--apple-blue); border-radius: 0 var(--apple-radius-md) var(--apple-radius-md) 0; font-size: 14px; line-height: 1.47; letter-spacing: -0.224px; color: var(--apple-text-secondary); margin-top: 24px; box-shadow: var(--apple-card-shadow); }
+        .tip-box strong { color: var(--apple-near-black); font-weight: 600; }
+        .compare-box { padding: 20px 24px; background: var(--apple-white); border-left: 4px solid var(--apple-near-black); border-radius: 0 var(--apple-radius-md) var(--apple-radius-md) 0; font-size: 14px; line-height: 1.47; letter-spacing: -0.224px; color: var(--apple-text-secondary); margin-top: 16px; box-shadow: var(--apple-card-shadow); }
+        .compare-box strong { color: var(--apple-near-black); font-weight: 600; }
+        .sources-box { padding: 20px 24px; background: var(--apple-white); border-left: 4px solid rgba(0,0,0,0.2); border-radius: 0 var(--apple-radius-md) var(--apple-radius-md) 0; font-size: 12px; line-height: 1.33; letter-spacing: -0.12px; color: var(--apple-text-tertiary); margin-top: 16px; box-shadow: var(--apple-card-shadow); }
+        .sources-box strong { color: var(--apple-near-black); font-weight: 600; }
+        .sources-box ul { margin: 8px 0 0 16px; padding: 0; }
+        .sources-box li { margin-bottom: 4px; }
+        input.error { border-color: #ff3b30 !important; box-shadow: 0 0 0 4px rgba(255,59,48,0.1) !important; }
+        .anime-ref-table { width: 100%; border-collapse: collapse; font-size: 13px; line-height: 1.29; letter-spacing: -0.224px; margin-top: 16px; }
+        .anime-ref-table th { background: rgba(0,113,227,0.08); color: var(--apple-blue); padding: 10px 12px; text-align: left; font-weight: 600; letter-spacing: -0.224px; }
+        .anime-ref-table td { padding: 10px 12px; border-bottom: 1px solid rgba(0,0,0,0.06); }
+        .anime-ref-table tr:last-child td { border-bottom: none; }
+        .anime-ref-table .match { background: rgba(52,199,89,0.1); color: #34c759; font-weight: 700; }
+        .anime-ref-table .near { background: rgba(255,149,0,0.1); color: #ff9500; }
+        .hidden-kig { display: none !important; }
+        .show-kig { display: block !important; }
+        .footer { text-align: center; padding: 32px 20px; background: var(--apple-black); color: rgba(255,255,255,0.48); font-size: 13px; letter-spacing: -0.12px; }
+        .footer a { color: rgba(255,255,255,0.64); text-decoration: none; transition: color 0.3s; }
+        .footer a:hover { color: var(--apple-white); }
+    </style>
+</head>
+<body>
+    <div class="hero">
+        <div class="container">
+            <h1>肩宽推算器</h1>
+            <p>基于 GB/T 10000-2023 中国成年人人体尺寸最新国家标准，同时推算水平肩宽与过肩线肩宽</p>
+        </div>
+    </div>
+
+    <div class="section-light">
+        <div class="container">
+            <div class="card">
+                <div class="card-body">
+                    <div class="card-title">基本信息</div>
+                    <div class="gender-select">
+                        <div class="gender-option">
+                            <input type="radio" id="male" name="gender" value="male" checked>
+                            <label for="male">男</label>
+                        </div>
+                        <div class="gender-option">
+                            <input type="radio" id="female" name="gender" value="female">
+                            <label for="female">女</label>
+                        </div>
+                    </div>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label class="required">身高</label>
+                            <div class="input-wrapper">
+                                <input type="number" id="height" step="0.5">
+                                <span class="unit">cm</span>
+                            </div>
+                            <div class="input-hint">站立赤脚，头顶至脚跟</div>
+                        </div>
+                        <div class="form-group">
+                            <label class="required">胸围</label>
+                            <div class="input-wrapper">
+                                <input type="number" id="chest" step="0.5">
+                                <span class="unit">cm</span>
+                            </div>
+                            <div class="input-hint">腋下水平绕胸部最丰满处</div>
+                        </div>
+                        <div class="form-group">
+                            <label>体重 <span class="tag tag-recommended">推荐</span></label>
+                            <div class="input-wrapper">
+                                <input type="number" id="weight" step="0.5">
+                                <span class="unit">kg</span>
+                            </div>
+                            <div class="input-hint">用于BMI体型修正，提升精度</div>
+                        </div>
+                        <div class="form-group">
+                            <label>外臂长 <span class="tag tag-optional">选填</span></label>
+                            <div class="input-wrapper">
+                                <input type="number" id="armLength" step="0.5">
+                                <span class="unit">cm</span>
+                            </div>
+                            <div class="input-hint">肩点(SP)沿手臂外侧至腕横纹，手臂自然下垂</div>
+                        </div>
+                        <div class="form-group">
+                            <label>颈围 <span class="tag tag-recommended">推荐</span></label>
+                            <div class="input-wrapper">
+                                <input type="number" id="neck" step="0.5">
+                                <span class="unit">cm</span>
+                            </div>
+                            <div class="input-hint">喉结下方水平绕颈一周，用于过肩线推算</div>
+                        </div>
+                        <div class="form-group">
+                            <label>腰围 <span class="tag tag-optional">选填</span></label>
+                            <div class="input-wrapper">
+                                <input type="number" id="waist" step="0.5">
+                                <span class="unit">cm</span>
+                            </div>
+                            <div class="input-hint">躯干最细处水平围量</div>
+                        </div>
+                    </div>
+                    <div class="divider" style="margin: 32px 0;"></div>
+                    <div class="card-title">Kigurumi 头壳参数（可选）</div>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>头壳围 <span class="tag tag-optional">选填</span></label>
+                            <div class="input-wrapper">
+                                <input type="number" id="kigCircum" step="0.5">
+                                <span class="unit">cm</span>
+                            </div>
+                            <div class="input-hint">头壳最大水平周长，通常75~85cm</div>
+                        </div>
+                        <div class="form-group">
+                            <label>头壳脸宽 <span class="tag tag-optional">选填</span></label>
+                            <div class="input-wrapper">
+                                <input type="number" id="kigFaceWidth" step="0.5">
+                                <span class="unit">cm</span>
+                            </div>
+                            <div class="input-hint">头壳正面最宽处，通常20~24cm</div>
+                        </div>
+                        <div class="form-group">
+                            <label>真人头长 <span class="tag tag-optional">选填</span></label>
+                            <div class="input-wrapper">
+                                <input type="number" id="realHeadLen" step="0.5">
+                                <span class="unit">cm</span>
+                            </div>
+                            <div class="input-hint">头顶至下巴，用于对比真人比例</div>
+                        </div>
+                    </div>
+                    <button class="calculate-btn" onclick="calculateShoulder()">开始推算</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="section-light" style="padding-top: 0;">
+        <div class="container">
+            <div class="card result-section" id="resultSection">
+                <div class="card-body">
+                    <div class="result-hero">
+                        <div class="visual-figure">
+                            <div class="figure-head"></div>
+                            <div class="figure-body"></div>
+                            <div class="shoulder-line-flat" id="shoulderLineFlat"></div>
+                            <div class="shoulder-line-curve" id="shoulderLineCurve"></div>
+                        </div>
+                        <div class="shoulder-labels">
+                            <span><span class="dot-flat"></span> 水平肩宽（直线）</span>
+                            <span><span class="dot-curve"></span> 过肩线肩宽（曲线）</span>
+                        </div>
+                        <div class="result-main">
+                            <div class="result-box" id="boxFlat">
+                                <div class="label">水平肩宽</div>
+                                <div class="value" id="valFlat">--</div>
+                                <div class="unit">cm  直线距离</div>
+                                <div class="desc">两肩端点(SP)之间的水平直线距离。注意：自己量体时容易量到'最大肩宽'(两肩峰外侧)，新国标P50为43.1cm，比标准肩宽37.5cm大约15%</div>
+                                <div class="result-range">范围 <span id="rangeFlatMin">--</span> ~ <span id="rangeFlatMax">--</span> cm</div>
+                            </div>
+                            <div class="result-box active" id="boxCurve">
+                                <div class="label">过肩线肩宽</div>
+                                <div class="value" id="valCurve">--</div>
+                                <div class="unit">cm  曲线距离</div>
+                                <div class="desc">皮尺贴着肩膀表面，从一侧肩点经后颈点(BNP)到另一侧肩点的曲线长度，裁缝量体常用此法</div>
+                                <div class="result-range">范围 <span id="rangeCurveMin">--</span> ~ <span id="rangeCurveMax">--</span> cm</div>
+                            </div>
+                        </div>
+                        <div id="bodyTypeBadge" class="body-type-badge body-type-normal"></div>
+                    </div>
+                    <div class="confidence-bar">
+                        <div class="confidence-label"><span>推算置信度</span><span id="confidenceText">--</span></div>
+                        <div class="confidence-track"><div class="confidence-fill" id="confidenceFill" style="width: 0%"></div></div>
+                    </div>
+                    <div id="kigResultSection" class="hidden-kig">
+                        <div class="divider" style="margin: 32px 0;"></div>
+                        <div class="card-title">Kigurumi 头壳比例分析</div>
+                        <div class="result-main" style="margin-bottom: 0;">
+                            <div class="result-box" id="boxKigHead">
+                                <div class="label">头壳头长（估算）</div>
+                                <div class="value" id="valKigHeadLen">--</div>
+                                <div class="unit">cm  头顶至下巴</div>
+                                <div class="desc">基于椭圆截面反推 + 动漫比例修正的综合估算</div>
+                            </div>
+                            <div class="result-box active" id="boxKigRatio">
+                                <div class="label">戴头壳后头身比</div>
+                                <div class="value" id="valKigHeadRatio">--</div>
+                                <div class="unit">头身  视觉比例</div>
+                                <div class="desc">身高除以头壳头长，决定角色的萌度与年龄感</div>
+                            </div>
+                        </div>
+                        <div class="detail-section" style="margin-top: 20px;">
+                            <div class="detail-item"><span class="label">真人基础头身比 <span class="formula">身高除以真人头长</span></span><span class="value" id="kigRealRatio">--</span></div>
+                            <div class="detail-item"><span class="label">椭圆截面法 <span class="formula">头壳围 + 脸宽反推头长</span></span><span class="value" id="kigEllipseLen">--</span></div>
+                            <div class="detail-item"><span class="label">动漫比例法 <span class="formula">头长 = 脸宽除以0.74</span></span><span class="value" id="kigAnimeLen">--</span></div>
+                            <div class="detail-item"><span class="label">头肩比（无假发）<span class="formula">肩宽除以头壳脸宽</span></span><span class="value" id="kigShoulderRatio">--</span></div>
+                            <div class="detail-item"><span class="label">头肩比（+假发）<span class="formula">肩宽除以(脸宽+4)</span></span><span class="value" id="kigShoulderRatioWig">--</span></div>
+                            <div class="detail-item"><span class="label">修正头身比 <span class="formula">(头壳头长 + 下巴到脚底)除以头壳头长</span></span><span class="value" id="kigAdjustedRatio">--</span></div>
+                            <div class="detail-item"><span class="label">未修正头身比 <span class="formula">身高除以头壳头长（旧算法）</span></span><span class="value" id="kigRawRatio">--</span></div>
+                            <div class="detail-item"><span class="label">头顶额外高度 <span class="formula">头壳头长 - 真人头长</span></span><span class="value" id="kigExtraHeight">--</span></div>
+                            <div class="detail-item"><span class="label">视觉总身高 <span class="formula">头壳头长 + 真人下巴到脚底</span></span><span class="value" id="kigVisualHeight">--</span></div>
+                            <div class="detail-item highlight"><span class="label">二次元角色匹配</span><span class="value" id="kigMatch">--</span></div>
+                        </div>
+                        <div class="detail-section" style="margin-top: 20px;">
+                            <div class="detail-title">真人身体 vs 动漫角色身体对比</div>
+                            <div class="detail-item"><span class="label">真人下巴到脚底 <span class="formula">身高 - 真人头长</span></span><span class="value" id="kigRealBodyLen">--</span></div>
+                            <div class="detail-item"><span class="label">同头长动漫角色下巴到脚底 <span class="formula">头壳头长乘以(头身比 - 1)</span></span><span class="value" id="kigAnimeBodyLen">--</span></div>
+                            <div class="detail-item"><span class="label">身体长度差异</span><span class="value" id="kigBodyDiff">--</span></div>
+                            <div class="detail-item" style="border-top: 2px solid rgba(0,0,0,0.08); padding-top: 16px; margin-top: 4px;"><span class="label">分析结论</span><span class="value" style="max-width: 60%; text-align: right; line-height: 1.6; font-size: 12px; letter-spacing: -0.12px;" id="kigBodyAnalysis">--</span></div>
+                        </div>
+                        <div class="detail-section" style="margin-top: 20px;">
+                            <div class="detail-title">二次元角色头身比 / 头肩比参考</div>
+                            <table class="anime-ref-table">
+                                <tr><th>角色类型</th><th>头身比</th><th>头肩比</th><th>风格</th></tr>
+                                <tr id="refQ"><td>Q版 / SD</td><td>2.0 ~ 3.0</td><td>1.0 ~ 1.3</td><td>极度萌化</td></tr>
+                                <tr id="refLoli"><td>幼女 / 萝莉</td><td>4.0 ~ 5.0</td><td>1.2 ~ 1.5</td><td>萌系</td></tr>
+                                <tr id="refShoujo"><td>少女 / 少年</td><td>5.0 ~ 6.0</td><td>1.5 ~ 1.8</td><td>标准萌</td></tr>
+                                <tr id="refAdult"><td>标准成年</td><td>6.5 ~ 7.5</td><td>1.8 ~ 2.2</td><td>写实动漫</td></tr>
+                                <tr id="refModel"><td>美型 / 模特</td><td>7.5 ~ 8.5</td><td>2.0 ~ 2.5</td><td>偏写实</td></tr>
+                            </table>
+                        </div>
+                        <div class="tip-box" style="margin-top: 20px;">
+                            <strong>Kigurumi 比例说明</strong><br>
+                            <strong>头身比</strong>：决定角色年龄感——头身比越低越萌、越幼；越高越成熟。Kigurumi 通常追求 5~6 头身以还原典型动漫角色。<br><br>
+                            <strong>头肩比</strong>：决定头部在视觉上的大小——头肩比越低，头在画面中显得越大越萌；越高则头越小越成熟。假发会让头看起来大一圈，显著降低头肩比。<br><br>
+                            <strong>头壳围</strong>：主要决定能否佩戴，对比例影响较小；<strong>头壳脸宽</strong>才是真正影响视觉比例的核心参数。
+                        </div>
+                    </div>
+                    <div class="divider"></div>
+                    <div class="card-title">水平肩宽推算过程</div>
+                    <div class="detail-section">
+                        <div class="detail-item"><span class="label">身高比例法 <span class="formula">肩宽 = 身高乘以系数</span></span><span class="value" id="methodHeight">--</span></div>
+                        <div class="detail-item"><span class="label">胸围关联法 <span class="formula">肩宽 = 胸围乘以系数</span></span><span class="value" id="methodChest">--</span></div>
+                        <div class="detail-item hidden" id="methodArmRow"><span class="label">臂长比例法 <span class="formula">肩宽 = 臂长乘以系数</span></span><span class="value" id="methodArm">--</span></div>
+                        <div class="detail-item hidden" id="methodNeckRow"><span class="label">颈围比例法 <span class="formula">肩宽 = 颈围乘以系数</span></span><span class="value" id="methodNeck">--</span></div>
+                        <div class="detail-item hidden" id="methodBmiRow"><span class="label">BMI 体型修正</span><span class="value" id="methodBmi">--</span></div>
+                        <div class="detail-item highlight"><span class="label">综合水平肩宽</span><span class="value" id="methodFinal">--</span></div>
+                    </div>
+                    <div class="divider"></div>
+                    <div class="card-title">过肩线肩宽推算</div>
+                    <div class="detail-section">
+                        <div class="detail-item"><span class="label">水平肩宽基础值</span><span class="value" id="curveBase">--</span></div>
+                        <div class="detail-item"><span class="label">肩斜弧长增量 <span class="formula">皮尺贴肩绕行</span></span><span class="value" id="curveExtra">--</span></div>
+                        <div class="detail-item"><span class="label">肩斜参考值 <span class="formula">肩高点到肩点</span></span><span class="value" id="shoulderSlope">--</span></div>
+                        <div class="detail-item highlight"><span class="label">过肩线肩宽</span><span class="value" id="curveFinal">--</span></div>
+                    </div>
+                    <div class="divider"></div>
+                    <div class="card-title">体型分析</div>
+                    <div class="detail-section">
+                        <div class="detail-item"><span class="label">身高肩宽指数</span><span class="value" id="shoulderIndex">--</span></div>
+                        <div class="detail-item"><span class="label">体型分类</span><span class="value" id="bodyType">--</span></div>
+                        <div class="detail-item" id="bmiRow"><span class="label">BMI 指数</span><span class="value" id="bmiValue">--</span></div>
+                        <div class="detail-item" id="bodyShapeRow"><span class="label">躯干体型</span><span class="value" id="bodyShape">--</span></div>
+                    </div>
+                    <div class="compare-box">
+                        <strong>两种肩宽的区别</strong><br>
+                        <strong>水平肩宽</strong>：两肩端点的水平直线距离，是人体测量学和服装号型标准（如GB/T 10000-2023）中的统计指标，用于体型分类和数据分析。<br><br>
+                        <strong>过肩线肩宽</strong>：皮尺贴着肩膀表面，从一侧肩端点(SP)沿着肩斜线经过后颈点(BNP/第七颈椎)再到另一侧肩端点的曲线长度。这是传统裁缝量体时的实际测量方法，直接对应衣服肩缝线的长度，对定制西装、衬衫等上衣的肩线裁剪至关重要。<br><br>
+                        两者的差值主要来自皮尺绕行颈后隆起的<span style="color:var(--apple-blue);font-weight:700">额外弧长</span>（通常约3.5~4.5cm），以及肩斜角度带来的路径增加。如果用户自己量体，通常量到的是过肩线肩宽。
+                    </div>
+                    <div class="tip-box">
+                        <strong>使用提示</strong><br>
+                        本工具同时推算两种肩宽：水平肩宽用于体型分析和号型对照，过肩线肩宽用于实际裁缝制版。若您自己量体时皮尺贴着肩膀绕过颈后，量到的就是过肩线肩宽；若量的是两肩骨端点之间的直线距离，则是水平肩宽。建议将两种数值都提供给定制裁缝，以便对方交叉验证。<br><br>
+                        <strong>关于外臂长</strong>：量体中的"臂长"通常即指外臂长（Outer Arm Length）——从肩外侧骨端点(SP)沿手臂外侧直线量至腕横纹（或尺骨茎突），手臂自然下垂。这与"袖长"（从肩点过肘弯到腕，手臂微曲）和"内臂长"（从腋下到腕）不同，请勿混淆。
+                    </div>
+                    <div class="sources-box">
+                        <strong>数据来源与参考</strong>
+                        <ul>
+                            <li>《GB/T 10000-2023 中国成年人人体尺寸》最新国家标准</li>
+                            <li>《GB 10000-88 中国成年人人体尺寸》国家标准（历史参考）</li>
+                            <li>AlvaForm《尺寸测量应用手册》— 总肩宽(曲线)定义</li>
+                            <li>ipatterning.com《如何量身》— 沿肩斜经BNP量测肩宽</li>
+                            <li>《服装结构设计》胸围-肩宽比例模型</li>
+                            <li>《Neck Circumference-to-Shoulder Width Ratio》医学人体测量</li>
+                            <li>百度百科《肩宽》词条 — 身高肩宽指数分型标准</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const MODEL = {
+            male: { heightCoeff: 0.2235, chestCoeff: 0.4325, heightWeight: 0.50, noBmiWeight: 0.50, armCoeff: 0.680, neckCoeff: 1.018, slopeBase: 2.5 },
+            female: { heightCoeff: 0.2233, chestCoeff: 0.4255, heightWeight: 0.55, noBmiWeight: 0.55, armCoeff: 0.702, neckCoeff: 0.980, slopeBase: 2.8 }
+        };
+
+        function calculateShoulder() {
+            const gender = document.querySelector('input[name="gender"]:checked').value;
+            const m = MODEL[gender];
+            const height = parseFloat(document.getElementById('height').value);
+            const chest = parseFloat(document.getElementById('chest').value);
+            const weight = parseFloat(document.getElementById('weight').value);
+            const armLength = parseFloat(document.getElementById('armLength').value);
+            const neck = parseFloat(document.getElementById('neck').value);
+            const waist = parseFloat(document.getElementById('waist').value);
+            const kigCircum = parseFloat(document.getElementById('kigCircum').value);
+            const kigFaceWidth = parseFloat(document.getElementById('kigFaceWidth').value);
+            const realHeadLen = parseFloat(document.getElementById('realHeadLen').value);
+
+            if (!height || !chest) {
+                if (!height) document.getElementById('height').classList.add('error');
+                if (!chest) document.getElementById('chest').classList.add('error');
+                setTimeout(() => document.querySelectorAll('.error').forEach(el => el.classList.remove('error')), 2000);
+                return;
+            }
+
+            const bmi = weight ? weight / ((height / 100) ** 2) : null;
+            const bmiFactor = bmi ? (bmi >= 18.5 && bmi < 24 ? 1.0 : (bmi < 18.5 ? 0.97 : 1.03)) : 1.0;
+            const bmiWeight = bmi ? 0.10 : 0;
+
+            const methodHeight = height * m.heightCoeff;
+            const methodChest = chest * m.chestCoeff;
+            const methodArm = armLength ? armLength * m.armCoeff : null;
+            const methodNeck = neck ? neck * m.neckCoeff : null;
+
+            let flatShoulder = methodHeight * m.heightWeight + methodChest * (1 - m.heightWeight - bmiWeight);
+            if (bmi) flatShoulder = flatShoulder * bmiFactor;
+            if (methodArm) flatShoulder = flatShoulder * (1 - 0.10) + methodArm * 0.10;
+            if (methodNeck) flatShoulder = flatShoulder * (1 - 0.08) + methodNeck * 0.08;
+            flatShoulder = Math.round(flatShoulder * 10) / 10;
+
+            const curveExtra = neck ? (Math.PI * neck / 4 - neck / 2) : (gender === 'male' ? 3.8 : 3.5);
+            const slope = m.slopeBase + (bmi && bmi > 24 ? 0.5 : 0) + (height > 175 ? 0.3 : 0);
+            const curveShoulder = Math.round((flatShoulder + curveExtra + slope * 0.15) * 10) / 10;
+
+            const confidence = Math.min(95, 65 + (weight ? 10 : 0) + (armLength ? 8 : 0) + (neck ? 8 : 0) + (waist ? 4 : 0));
+
+            const shoulderIndex = (flatShoulder / height * 100).toFixed(1);
+            let bodyTypeText = '', badgeClass = '';
+            const si = parseFloat(shoulderIndex);
+            if (gender === 'male') {
+                if (si < 21.5) { bodyTypeText = '窄肩型'; badgeClass = 'body-type-narrow'; }
+                else if (si < 23.5) { bodyTypeText = '标准型'; badgeClass = 'body-type-normal'; }
+                else { bodyTypeText = '宽肩型'; badgeClass = 'body-type-wide'; }
+            } else {
+                if (si < 20.0) { bodyTypeText = '窄肩型'; badgeClass = 'body-type-narrow'; }
+                else if (si < 22.0) { bodyTypeText = '标准型'; badgeClass = 'body-type-normal'; }
+                else { bodyTypeText = '宽肩型'; badgeClass = 'body-type-wide'; }
+            }
+
+            let bodyShapeText = '--';
+            if (waist && chest) {
+                const ratio = chest / waist;
+                if (ratio < 0.85) bodyShapeText = 'H型 / 矩形';
+                else if (ratio < 0.95) bodyShapeText = '正常型';
+                else bodyShapeText = 'V型 / 倒三角';
+            }
+
+            document.getElementById('valFlat').textContent = flatShoulder.toFixed(1);
+            document.getElementById('valCurve').textContent = curveShoulder.toFixed(1);
+            document.getElementById('rangeFlatMin').textContent = (flatShoulder - 1.5).toFixed(1);
+            document.getElementById('rangeFlatMax').textContent = (flatShoulder + 1.5).toFixed(1);
+            document.getElementById('rangeCurveMin').textContent = (curveShoulder - 1.5).toFixed(1);
+            document.getElementById('rangeCurveMax').textContent = (curveShoulder + 1.5).toFixed(1);
+            document.getElementById('confidenceText').textContent = confidence + '%';
+            document.getElementById('confidenceFill').style.width = confidence + '%';
+
+            const badge = document.getElementById('bodyTypeBadge');
+            badge.className = 'body-type-badge ' + badgeClass;
+            badge.textContent = bodyTypeText + '  身高肩宽指数 ' + shoulderIndex;
+
+            document.getElementById('methodHeight').textContent = methodHeight.toFixed(1) + ' cm';
+            document.getElementById('methodChest').textContent = methodChest.toFixed(1) + ' cm';
+            if (methodArm) { document.getElementById('methodArmRow').classList.remove('hidden'); document.getElementById('methodArm').textContent = methodArm.toFixed(1) + ' cm'; }
+            else document.getElementById('methodArmRow').classList.add('hidden');
+            if (methodNeck) { document.getElementById('methodNeckRow').classList.remove('hidden'); document.getElementById('methodNeck').textContent = methodNeck.toFixed(1) + ' cm'; }
+            else document.getElementById('methodNeckRow').classList.add('hidden');
+            if (bmi) { document.getElementById('methodBmiRow').classList.remove('hidden'); document.getElementById('methodBmi').textContent = '' + bmiFactor.toFixed(2) + ' (' + bmi.toFixed(1) + ')'; }
+            else document.getElementById('methodBmiRow').classList.add('hidden');
+            document.getElementById('methodFinal').textContent = flatShoulder.toFixed(1) + ' cm';
+
+            document.getElementById('curveBase').textContent = flatShoulder.toFixed(1) + ' cm';
+            document.getElementById('curveExtra').textContent = '+' + curveExtra.toFixed(1) + ' cm';
+            document.getElementById('shoulderSlope').textContent = slope.toFixed(1) + ' cm';
+            document.getElementById('curveFinal').textContent = curveShoulder.toFixed(1) + ' cm';
+
+            document.getElementById('shoulderIndex').textContent = shoulderIndex;
+            document.getElementById('bodyType').textContent = bodyTypeText;
+            if (bmi) { document.getElementById('bmiValue').textContent = bmi.toFixed(1) + ' (' + (bmi < 18.5 ? '偏瘦' : bmi < 24 ? '正常' : bmi < 28 ? '超重' : '肥胖') + ')'; }
+            else document.getElementById('bmiValue').parentElement.classList.add('hidden');
+            if (bodyShapeText !== '--') document.getElementById('bodyShape').textContent = bodyShapeText;
+            else document.getElementById('bodyShapeRow').classList.add('hidden');
+
+            const flatPx = Math.max(36, Math.min(160, flatShoulder * 2.8));
+            const curvePx = Math.max(44, Math.min(180, curveShoulder * 2.8));
+            document.getElementById('shoulderLineFlat').style.width = flatPx + 'px';
+            document.getElementById('shoulderLineCurve').style.width = curvePx + 'px';
+
+            document.getElementById('resultSection').classList.add('show');
+            setTimeout(() => { document.getElementById('resultSection').scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }, 100);
+
+            if (kigCircum && kigFaceWidth) {
+                const kigSection = document.getElementById('kigResultSection');
+                kigSection.classList.remove('hidden-kig'); kigSection.classList.add('show-kig');
+                const b = kigFaceWidth / 2;
+                const cVal = kigCircum / (2 * Math.PI);
+                const aSq = 2 * cVal * cVal - b * b;
+                const a = aSq > 0 ? Math.sqrt(aSq) : 15;
+                const ellipseHeadLen = 2 * a;
+                const animeHeadLen = kigFaceWidth / 0.74;
+                let kigHeadLen = (ellipseHeadLen + animeHeadLen) / 2;
+                kigHeadLen = Math.max(26, Math.min(38, kigHeadLen));
+
+                let realHeadLenUsed = realHeadLen;
+                if (!realHeadLenUsed || realHeadLenUsed <= 0) {
+                    realHeadLenUsed = gender === 'male' ? height / 7.5 : height / 7.8;
+                }
+                const chinToGround = height - realHeadLenUsed;
+                const visualHeight = kigHeadLen + chinToGround;
+                const extraHeight = kigHeadLen - realHeadLenUsed;
+                const kigHeadRatio = visualHeight / kigHeadLen;
+                const rawHeadRatio = height / kigHeadLen;
+                const shoulderRatio = flatShoulder / kigFaceWidth;
+                const shoulderRatioWig = flatShoulder / (kigFaceWidth + 4);
+
+                let realRatio = '--';
+                if (realHeadLen && realHeadLen > 0) realRatio = (height / realHeadLen).toFixed(1) + ' 头身';
+
+                const animeBodyLen = kigHeadLen * (kigHeadRatio - 1);
+                const realBodyLen = chinToGround;
+                const bodyDiff = realBodyLen - animeBodyLen;
+
+                let matchText = '';
+                const hr = kigHeadRatio;
+                if (hr < 3.5) matchText = 'Q版 / SD';
+                else if (hr < 4.8) matchText = '幼女 / 萝莉';
+                else if (hr < 6.0) matchText = '少女 / 少年';
+                else if (hr < 7.2) matchText = '标准成年';
+                else matchText = '美型 / 模特';
+
+                let matchNote = '';
+                if (shoulderRatioWig < 1.5) matchNote = '（偏萌，适合戴假发）';
+                else if (shoulderRatioWig > 2.0) matchNote = '（偏写实，头壳脸宽较小）';
+                if (shoulderRatioWig < 1.5) matchNote = '（）';
+                else if (shoulderRatioWig > 2.0) matchNote = '（偏写实，头壳脸宽较小）';
+
+                document.querySelectorAll('.anime-ref-table tr').forEach(tr => { tr.classList.remove('match', 'near'); });
+                let matchId = '';
+                if (matchText === 'Q版 / SD') matchId = 'refQ';
+                else if (matchText === '幼女 / 萝莉') matchId = 'refLoli';
+                else if (matchText === '少女 / 少年') matchId = 'refShoujo';
+                else if (matchText === '标准成年') matchId = 'refAdult';
+                else matchId = 'refModel';
+                const matchRow = document.getElementById(matchId);
+                if (matchRow) matchRow.classList.add('match');
+
+                document.getElementById('valKigHeadLen').textContent = kigHeadLen.toFixed(1);
+                document.getElementById('valKigHeadRatio').textContent = kigHeadRatio.toFixed(1);
+                document.getElementById('kigRealRatio').textContent = realRatio;
+                document.getElementById('kigEllipseLen').textContent = ellipseHeadLen.toFixed(1) + ' cm';
+                document.getElementById('kigAnimeLen').textContent = animeHeadLen.toFixed(1) + ' cm';
+                document.getElementById('kigShoulderRatio').textContent = shoulderRatio.toFixed(2);
+                document.getElementById('kigShoulderRatioWig').textContent = shoulderRatioWig.toFixed(2);
+                document.getElementById('kigMatch').textContent = matchText + matchNote;
+                document.getElementById('kigRawRatio').textContent = rawHeadRatio.toFixed(1) + ' 头身';
+                document.getElementById('kigAdjustedRatio').textContent = kigHeadRatio.toFixed(1) + ' 头身';
+                document.getElementById('kigExtraHeight').textContent = '+' + extraHeight.toFixed(1) + ' cm';
+                document.getElementById('kigVisualHeight').textContent = visualHeight.toFixed(1) + ' cm';
+                document.getElementById('kigBodyDiff').textContent = (bodyDiff > 0 ? '+' : '') + bodyDiff.toFixed(1) + ' cm (' + (bodyDiff > 0 ? '更长' : '更短') + ')';
+                document.getElementById('kigRealBodyLen').textContent = realBodyLen.toFixed(1) + ' cm';
+                document.getElementById('kigAnimeBodyLen').textContent = animeBodyLen.toFixed(1) + ' cm';
+
+                let analysisText = '';
+                if (bodyDiff > 3) analysisText = '真人下巴到脚底比同头长动漫角色长 ' + bodyDiff.toFixed(1) + 'cm，真人身体更修长，头身比偏大（头更小），整体效果更偏写实。若追求更萌的效果，建议选择头长更大的头壳或搭配厚底鞋增加身高。';
+                else if (bodyDiff > -3) analysisText = '真人身体比例与动漫角色非常接近，头壳与身体协调性极佳。';
+                else analysisText = '真人下巴到脚底比动漫角色短 ' + Math.abs(bodyDiff).toFixed(1) + 'cm，真人身体更紧凑，头身比偏小（头更大），整体效果更偏萌。';
+                document.getElementById('kigBodyAnalysis').textContent = analysisText;
+            } else {
+                document.getElementById('kigResultSection').classList.add('hidden-kig');
+                document.getElementById('kigResultSection').classList.remove('show-kig');
+            }
+        }
+
+        document.querySelectorAll('input').forEach(input => {
+            input.addEventListener('keypress', function(e) { if (e.key === 'Enter') calculateShoulder(); });
+        });
+    </script>
+    <div class="footer">
+        Made by <a href="https://github.com/jyyosa" target="_blank">@jyyosa</a> · 数据源自 GB/T 10000-2023
+    </div>
+</body>
+</html>
